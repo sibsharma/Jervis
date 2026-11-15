@@ -315,8 +315,18 @@
 
     <script>
         // API Configuration (Leave apiKey empty; runtime provides it)
-        const apiKey = "";
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        function getApiKey() {
+            let k = '';
+            try { k = localStorage.getItem('jarvis_api_key') || ''; } catch (e) {}
+            if (!k) {
+                k = (prompt('বস, আপনার Gemini API Key এখানে পেস্ট করুন (এটি শুধু আপনার ফোনে সংরক্ষিত থাকবে):') || '').trim();
+                if (k) { try { localStorage.setItem('jarvis_api_key', k); } catch (e) {} }
+            }
+            return k;
+        }
+        function getApiUrl() {
+            return `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${getApiKey()}`;
+        }
 
         // State Variables
         let currentMode = 'assistant'; // 'assistant' or 'rnd'
@@ -659,12 +669,13 @@
             let delay = 1000;
             for (let attempt = 0; attempt < 5; attempt++) {
                 try {
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch(getApiUrl(), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
 
+                    if (response.status === 400 || response.status === 403) { try { localStorage.removeItem('jarvis_api_key'); } catch (e) {} }
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     
                     const data = await response.json();
